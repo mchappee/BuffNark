@@ -12,13 +12,18 @@
   else
     die ("no reportname\n");
 
+  if (isset ($argv[3]))
+    $reporttitle = $argv[3];
+  else
+    die ("no report title\n");
+
   $auraarray = Array ("Mana Regeneration", "Rallying Cry of the Dragonslayer", "Fengus' Ferocity", "Mol'dar's Moxie", "Slip'kik's Savvy", "Spirit of Zandalar", "Songflower Serenade", 
                        "Regeneration", "Shadow Protection "); //, "Frost Protection", "Strike of the Scorpok", "Invulnerability");
   $persistarray = Array ("Rallying Cry of the Dragonslayer", "Fengus' Ferocity", "Mol'dar's Moxie", "Slip'kik's Savvy", "Spirit of Zandalar", "Songflower Serenade");
   $castarray = Array ("Brilliant Wizard Oil", "Brilliant Mana Oil", "Mana Regeneration", "Greater Firepower", "Greater Arcane Elixir", "Distilled Wisdom", "Supreme Power", 
                       "Flask of the Titans", "Elixir of the Mongoose", "Elixir of Giants", "Sharpen Blade V", "Sharpen Blade III", "Sharpen Weapon - Critical", "Greater Armor", 
                       "Fire Protection","Frost Protection", "Strike of the Scorpok", "Invulnerability", "Winterfall Firewater", "Gordok Green Grog",
-                      "Free Action", "Swiftness of Zanza", "Spirit of Zanza", "Sheen of Zanza");
+                      "Free Action", "Swiftness of Zanza", "Spirit of Zanza", "Sheen of Zanza", "Nature Protection", "Infallible Mind");
 
   $iconarray = Array (Array ("Brilliant Wizard Oil", "brilliantwizard.jpg"), Array ("Brilliant Mana Oil", "brilliantmana.jpg"), Array ("Mana Regeneration", "mageblood.jpg"), 
                       Array ("Greater Firepower", "firepower.jpg"), Array ("Greater Arcane Elixir","arcane.jpg"), Array ("Distilled Wisdom","distilled.jpg"), Array ("Supreme Power", "supremepower.jpg"),
@@ -28,7 +33,8 @@
                       Array ("Spirit of Zandalar", "wb.png"), Array ("Songflower Serenade", "wb.png"), Array ("Greater Armor", "greaterdefense.jpg"), Array ("Regeneration", "trollsblood.jpg"), 
                       Array ("Free Action", "freeaction.jpg"), Array ("Swiftness of Zanza", "swiftzanza.jpg"), Array ("Spirit of Zanza", "spiritzanza.jpg"), Array ("Sheen of Zanza", "sheenzanza.jpg"),
                       Array ("Winterfall Firewater", "firewater.jpg"), Array ("Gordok Green Grog", "greengrog.jpg"), Array ("Shadow Protection ", "shadowprot.jpg"), Array ("Frost Protection", "frostprot.jpg"),
-                      Array ("Strike of the Scorpok", "scorpok.jpg"), Array ("Invulnerability", "invulnerability.jpg"), Array ("Fire Protection", "fireprot.jpg"));
+                      Array ("Strike of the Scorpok", "scorpok.jpg"), Array ("Invulnerability", "invulnerability.jpg"), Array ("Fire Protection", "fireprot.jpg"), Array ("Nature Protection", "natureprot.jpg"),
+                      Array ("Infallible Mind", "infallible.jpg"));
 
   $playerarray = Array ();
 
@@ -40,7 +46,7 @@
   }
 
   $playerarray = condensereport ($playerarray);
-  create_output ($playerarray, $reportname, $iconarray);
+  create_output ($playerarray, $reportname, $iconarray, $reporttitle);
 
   function geticon ($consume, $iconarray) {
     foreach ($iconarray as $iconpair) {
@@ -92,13 +98,25 @@
     return $playerarray;
   }
 
-  function create_output ($playerarray, $reportname, $iconarray) {
+  function create_output ($playerarray, $reportname, $iconarray, $reporttitle) {
+    $count = 0;
     $hf = fopen ("reports/$reportname", "w");
+    fputs ($hf, "<html><body bgcolor=#ffffff><h2>$reporttitle</h2></body>\n");
     fputs ($hf, "<table border=0>\n");
  
     foreach ($playerarray as $player) {
+      if ($count == 0)
+        fputs ($hf, "<tr><td valign=top>\n");
+      if ($count == 1)
+        fputs ($hf, "</td><td valign=top>\n");
+      if ($count == 2)
+        fputs ($hf, "</td><td valign=top>\n");
+      if ($count == 3)
+        fputs ($hf, "</td><td valign=top>\n");
+      
+
       $name = str_replace ("\"", "",$player->name);
-      fputs ($hf, "<tr><td colspan=3><b>$name</b></td></tr>\n");
+      fputs ($hf, "<table border=0><tr><td colspan=3><b>$name</b></td></tr>\n");
       foreach ($player->condensedarray as $consume) {
         $icon = geticon ($consume->consumename, $iconarray);
  
@@ -109,7 +127,12 @@
         fputs ($hf, "<tr><td>&nbsp&nbsp<img src=/unyielding/buffnark/icons/$icon width=20></td><td></td><td>$consume->consumename $x</td></tr>"); //<td>&nbsp&nbsp<b>Start:</b> $consume->start</td><td>&nbsp&nbsp<b>End:</b> $consume->end</td></tr>\n");
       }
 
-      fputs ($hf, "<tr><td colspan=3>&nbsp</td></tr>\n");
+      fputs ($hf, "<tr><td colspan=3>&nbsp</td></tr></table>\n");
+      if ($count == 3) {
+        fputs ($hf, "</td></tr>\n");
+        $count = -1;
+      }
+      $count++;
     }
     fputs ($hf, "</table>\n");
   }
