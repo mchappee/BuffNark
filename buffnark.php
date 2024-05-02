@@ -23,7 +23,7 @@
   $castarray = Array ("Brilliant Wizard Oil", "Brilliant Mana Oil", "Mana Regeneration", "Greater Firepower", "Greater Arcane Elixir", "Distilled Wisdom", "Supreme Power", 
                       "Flask of the Titans", "Elixir of the Mongoose", "Elixir of Giants", "Sharpen Blade V", "Sharpen Blade III", "Sharpen Weapon - Critical", "Greater Armor", 
                       "Fire Protection","Frost Protection", "Strike of the Scorpok", "Invulnerability", "Winterfall Firewater", "Gordok Green Grog",
-                      "Free Action", "Swiftness of Zanza", "Spirit of Zanza", "Sheen of Zanza", "Nature Protection", "Infallible Mind");
+                      "Free Action", "Swiftness of Zanza", "Spirit of Zanza", "Sheen of Zanza", "Nature Protection", "Infallible Mind", "Health II");
 
   $iconarray = Array (Array ("Brilliant Wizard Oil", "brilliantwizard.jpg"), Array ("Brilliant Mana Oil", "brilliantmana.jpg"), Array ("Mana Regeneration", "mageblood.jpg"), 
                       Array ("Greater Firepower", "firepower.jpg"), Array ("Greater Arcane Elixir","arcane.jpg"), Array ("Distilled Wisdom","distilled.jpg"), Array ("Supreme Power", "supremepower.jpg"),
@@ -34,7 +34,7 @@
                       Array ("Free Action", "freeaction.jpg"), Array ("Swiftness of Zanza", "swiftzanza.jpg"), Array ("Spirit of Zanza", "spiritzanza.jpg"), Array ("Sheen of Zanza", "sheenzanza.jpg"),
                       Array ("Winterfall Firewater", "firewater.jpg"), Array ("Gordok Green Grog", "greengrog.jpg"), Array ("Shadow Protection ", "shadowprot.jpg"), Array ("Frost Protection", "frostprot.jpg"),
                       Array ("Strike of the Scorpok", "scorpok.jpg"), Array ("Invulnerability", "invulnerability.jpg"), Array ("Fire Protection", "fireprot.jpg"), Array ("Nature Protection", "natureprot.jpg"),
-                      Array ("Infallible Mind", "infallible.jpg"));
+                      Array ("Infallible Mind", "infallible.jpg"), Array ("Health II", "fort.jpg"));
 
   $playerarray = Array ();
 
@@ -42,11 +42,14 @@
   $playerarray = get_players ($wowlog);
 
   foreach ($playerarray as $player) {
-    $player->consumearray = get_consumes ($wowlog, $player->id, $persistarray);
+    $consumepair = get_consumes ($wowlog, $player->id, $persistarray);
+    $player->consumearray = $consumepair[0];
+    $player->consumedetailarray = $consumepair[1];
   }
 
   $playerarray = condensereport ($playerarray);
   create_output ($playerarray, $reportname, $iconarray, $reporttitle);
+  create_longoutput ($playerarray, "long-" . $reportname, $iconarray, $reporttitle);
 
   function geticon ($consume, $iconarray) {
     foreach ($iconarray as $iconpair) {
@@ -98,6 +101,23 @@
     return $playerarray;
   }
 
+  function create_longoutput ($playerarray, $reportname, $iconarray) {
+    $hf = fopen ("reports/$reportname", "w");
+    fputs ($hf, "<table border=0>\n");
+
+    foreach ($playerarray as $player) {
+      $name = str_replace ("\"", "",$player->name);
+      fputs ($hf, "<tr><td colspan=5><b>$name</b></td></tr>\n");
+      foreach ($player->consumedetailarray as $consume) {
+        $icon = geticon ($consume->consumename, $iconarray);
+        fputs ($hf, "<tr><td>&nbsp&nbsp<img src=/unyielding/buffnark/icons/$icon width=20></td><td></td><td>$consume->consumename</td><td>&nbsp&nbsp<b>Start:</b> $consume->start</td><td>&nbsp&nbsp<b>End:</b> $consume->end</td></tr>\n");
+      }
+
+      fputs ($hf, "<tr><td colspan=5>&nbsp</td></tr>\n");
+    }
+    fputs ($hf, "</table>\n");
+  }
+
   function create_output ($playerarray, $reportname, $iconarray, $reporttitle) {
     $count = 0;
     $hf = fopen ("reports/$reportname", "w");
@@ -124,7 +144,7 @@
           $x = "x" . $consume->count;
         else
           $x = "";
-        fputs ($hf, "<tr><td>&nbsp&nbsp<img src=/unyielding/buffnark/icons/$icon width=20></td><td></td><td>$consume->consumename $x</td></tr>"); //<td>&nbsp&nbsp<b>Start:</b> $consume->start</td><td>&nbsp&nbsp<b>End:</b> $consume->end</td></tr>\n");
+        fputs ($hf, "<tr><td>&nbsp&nbsp<img src=/unyielding/buffnark/icons/$icon width=20></td><td></td><td>$consume->consumename $x</td></tr>");
       }
 
       fputs ($hf, "<tr><td colspan=3>&nbsp</td></tr></table>\n");
@@ -156,6 +176,7 @@
 
   function get_consumes ($wowlog, $playerid, $persistarray) {
     $consumearray = Array ();
+    $consumedetailarray = Array ();
     foreach ($wowlog as $line) {
       $tstamparray = explode (" ", $line);
       $tstamp = $tstamparray[0] . " " . $tstamparray[1];
@@ -168,23 +189,29 @@
       if ($larraycm[0] == "SPELL_AURA_APPLIED" && $larraycm[1] == $playerid) {
         if (check_persist ($buff, $persistarray, $consumearray)) {
           $consume  = New Consume;
+          $consumedetail = New ConsumeDetail;
           $consume->consumename = $buff;
-          //$consume->start = $tstamp;
-          //$consume->end = get_endconsume ($wowlog, $larraycm[9], $playerid, $tstamp);
+          $consumedetail->consumename = $buff;
+          $consumedetail->start = $tstamp;
+          $consumedetail->end = get_endconsume ($wowlog, $larraycm[9], $playerid, $tstamp);
           array_push ($consumearray, $consume);
+          array_push ($consumedetailarray, $consumedetail);
         }
       }
 
       if ($larraycm[0] == "SPELL_CAST_SUCCESS" && $larraycm[1] == $playerid) {
         $consume  = New Consume;
+        $consumedetail = New ConsumeDetail;
         $consume->consumename = $buff;
-        //$consume->start = $tstamp;
-        //$consume->end = get_endconsume ($wowlog, $larraycm[9], $playerid, $tstamp);
+        $consumedetail->consumename = $buff;
+        $consumedetail->start = $tstamp;
+        $consumedetail->end = get_endconsume ($wowlog, $larraycm[9], $playerid, $tstamp);
         array_push ($consumearray, $consume);
+        array_push ($consumedetailarray, $consumedetail);
       }
     }
 
-    return $consumearray;
+    return Array ($consumearray, $consumedetailarray);
 
   }
 
@@ -198,10 +225,10 @@
       $larraycm = explode (",", $larraysp[1]);
 
       if ($tstampflag) {
-        //if (($larraycm[0] == "SPELL_AURA_REMOVED" && $larraycm[9] == $consumeid) && $larraycm[1] == $playerid)
-        //  return $newtstamp;
-        if ((($larraycm[0] == "SPELL_AURA_APPLIED" && $larraycm[9] == $consumeid) || ($larraycm[0] == "SPELL_AURA_REMOVED" && $larraycm[9] == $consumeid)) && $larraycm[1] == $playerid)
+        if (($larraycm[0] == "SPELL_AURA_REMOVED" && $larraycm[9] == $consumeid) && $larraycm[1] == $playerid)
           return $newtstamp;
+        //if ((($larraycm[0] == "SPELL_AURA_APPLIED" && $larraycm[9] == $consumeid) || ($larraycm[0] == "SPELL_AURA_REMOVED" && $larraycm[9] == $consumeid)) && $larraycm[1] == $playerid)
+          //return $newtstamp;
         //if (($larraycm[0] == "SPELL_AURA_APPLIED" && $larraycm[9] == $consumeid) || ($larraycm[0] == "SPELL_AURA_REMOVED" && $larraycm[9] == $consumeid))
       }
 
