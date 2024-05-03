@@ -18,12 +18,14 @@
     die ("no report title\n");
 
   $auraarray = Array ("Mana Regeneration", "Rallying Cry of the Dragonslayer", "Fengus' Ferocity", "Mol'dar's Moxie", "Slip'kik's Savvy", "Spirit of Zandalar", "Songflower Serenade", 
-                       "Regeneration", "Shadow Protection "); //, "Frost Protection", "Strike of the Scorpok", "Invulnerability");
-  $persistarray = Array ("Rallying Cry of the Dragonslayer", "Fengus' Ferocity", "Mol'dar's Moxie", "Slip'kik's Savvy", "Spirit of Zandalar", "Songflower Serenade");
+                       "Regeneration", "Shadow Protection ", "Blessed Sunfruit", "Spirit of Zanza", "Warchief's Blessing");
+  $persistarray = Array ("Rallying Cry of the Dragonslayer", "Fengus' Ferocity", "Mol'dar's Moxie", "Slip'kik's Savvy", "Spirit of Zandalar", "Songflower Serenade", "Warchief's Blessing");
+
   $castarray = Array ("Brilliant Wizard Oil", "Brilliant Mana Oil", "Mana Regeneration", "Greater Firepower", "Greater Arcane Elixir", "Distilled Wisdom", "Supreme Power", 
                       "Flask of the Titans", "Elixir of the Mongoose", "Elixir of Giants", "Sharpen Blade V", "Sharpen Blade III", "Sharpen Weapon - Critical", "Greater Armor", 
                       "Fire Protection","Frost Protection", "Strike of the Scorpok", "Invulnerability", "Winterfall Firewater", "Gordok Green Grog",
-                      "Free Action", "Swiftness of Zanza", "Spirit of Zanza", "Sheen of Zanza", "Nature Protection", "Infallible Mind", "Health II");
+                      "Free Action", "Swiftness of Zanza", "Sheen of Zanza", "Nature Protection ", "Infallible Mind", "Health II", "Arcane Protection", "Mighty Rage",
+                      "Stratholme Holy Water", "Rage of Ages", "Enhance Blunt Weapon V", "Goblin Sapper Charge");
 
   $iconarray = Array (Array ("Brilliant Wizard Oil", "brilliantwizard.jpg"), Array ("Brilliant Mana Oil", "brilliantmana.jpg"), Array ("Mana Regeneration", "mageblood.jpg"), 
                       Array ("Greater Firepower", "firepower.jpg"), Array ("Greater Arcane Elixir","arcane.jpg"), Array ("Distilled Wisdom","distilled.jpg"), Array ("Supreme Power", "supremepower.jpg"),
@@ -33,8 +35,10 @@
                       Array ("Spirit of Zandalar", "wb.png"), Array ("Songflower Serenade", "wb.png"), Array ("Greater Armor", "greaterdefense.jpg"), Array ("Regeneration", "trollsblood.jpg"), 
                       Array ("Free Action", "freeaction.jpg"), Array ("Swiftness of Zanza", "swiftzanza.jpg"), Array ("Spirit of Zanza", "spiritzanza.jpg"), Array ("Sheen of Zanza", "sheenzanza.jpg"),
                       Array ("Winterfall Firewater", "firewater.jpg"), Array ("Gordok Green Grog", "greengrog.jpg"), Array ("Shadow Protection ", "shadowprot.jpg"), Array ("Frost Protection", "frostprot.jpg"),
-                      Array ("Strike of the Scorpok", "scorpok.jpg"), Array ("Invulnerability", "invulnerability.jpg"), Array ("Fire Protection", "fireprot.jpg"), Array ("Nature Protection", "natureprot.jpg"),
-                      Array ("Infallible Mind", "infallible.jpg"), Array ("Health II", "fort.jpg"));
+                      Array ("Strike of the Scorpok", "scorpok.jpg"), Array ("Invulnerability", "invulnerability.jpg"), Array ("Fire Protection", "fireprot.jpg"), Array ("Nature Protection ", "natureprot.jpg"),
+                      Array ("Infallible Mind", "infallible.jpg"), Array ("Health II", "fort.jpg"), Array ("Arcane Protection", "arcaneprot.jpg"), Array ("Blessed Sunfruit", "sunfruit.jpg"),
+                      Array ("Warchief's Blessing", "wb.png"), Array ("Mighty Rage", "mightyrage.jpg"), Array ("Stratholme Holy Water", "holywater.jpg"), Array ("Rage of Ages", "roids.jpg"),
+                      Array ("Enhance Blunt Weapon V", "blunt5.jpg"), Array ("Goblin Sapper Charge", "sapper.jpg"));
 
   $playerarray = Array ();
 
@@ -118,12 +122,54 @@
     fputs ($hf, "</table>\n");
   }
 
+  function create_stats ($playerarray) {
+    $statarray = Array ();
+    foreach ($playerarray as $player) {
+      //print_r ($player);
+      foreach ($player->condensedarray as $consume) {
+        if (isset ($statarray[$consume->consumename]))
+          $statarray[$consume->consumename] = $statarray[$consume->consumename] + $consume->count;
+        else
+          $statarray[$consume->consumename] = $consume->count;
+      }
+    }
+    return $statarray;
+  }
+
   function create_output ($playerarray, $reportname, $iconarray, $reporttitle) {
     $count = 0;
     $hf = fopen ("reports/$reportname", "w");
     fputs ($hf, "<html><body bgcolor=#ffffff><h2>$reporttitle</h2></body>\n");
+
+    $statarray = create_stats ($playerarray);
+
+    fputs ($hf, "<table border=1><tr><td>\n");
     fputs ($hf, "<table border=0>\n");
- 
+
+    foreach (array_keys ($statarray) as $stat) {
+      if ($count == 0)
+        fputs ($hf, "<tr><td valign=top>\n");
+      if ($count == 1)
+        fputs ($hf, "</td><td valign=top>\n");
+      if ($count == 2)
+        fputs ($hf, "</td><td valign=top>\n");
+      if ($count == 3)
+        fputs ($hf, "</td><td valign=top>\n");
+
+      fputs ($hf, "&nbsp&nbsp&nbsp$stat:</td><td>" . $statarray[$stat]);
+
+      if ($count == 3) {
+        fputs ($hf, "</td></tr>\n");
+        $count = -1;
+      }
+      $count++;
+    }
+
+    fputs ($hf, "</tr></table></td></tr></table><br>\n");
+
+    fputs ($hf, "<table border=0>\n");
+    $count = 0; 
+
     foreach ($playerarray as $player) {
       if ($count == 0)
         fputs ($hf, "<tr><td valign=top>\n");
